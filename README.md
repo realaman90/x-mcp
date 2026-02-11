@@ -1,14 +1,18 @@
 # x-mcp
 
+[![npm version](https://img.shields.io/npm/v/@realaman90/x-mcp)](https://www.npmjs.com/package/@realaman90/x-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 MCP server for X/Twitter API — give Claude (or any MCP client) the ability to search tweets, read profiles, get timelines, and read replies.
 
 **Read-only. No posting, liking, or following. Safe to use with AI agents.**
 
 ## Why
 
-- Find engagement opportunities on X without leaving Claude
+- Search and analyze tweets without leaving your AI workflow
 - Study reply patterns and conversations around any topic
 - Research accounts, their content, and audience reactions
+- Works with Claude Code, Claude Desktop, or any MCP-compatible client
 - All read-only — no risk of accidental tweets or follows
 
 ## Tools
@@ -97,6 +101,20 @@ Single-file MCP server (~120 lines). No build step, no config files. Reads `X_BE
 ```
 Claude ↔ stdio ↔ x-mcp ↔ X API v2
 ```
+
+## Contributing
+
+Contributions are welcome! Feel free to open issues or submit PRs.
+
+1. Fork the repo
+2. Create your branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m "Add my feature"`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
+## Author
+
+Built by [@amanrawatamg](https://x.com/amanrawatamg)
 
 ## License
 
