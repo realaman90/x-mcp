@@ -1,11 +1,11 @@
 {
-  "name": "x-mcp",
+  "name": "@realaman90/x-mcp",
   "version": "1.0.0",
   "description": "MCP server for X/Twitter API — search tweets, read profiles, get timelines and replies",
   "type": "module",
   "main": "index.js",
   "bin": {
-    "x-mcp": "./index.js"
+    "x-mcp": "index.js"
   },
   "keywords": ["mcp", "twitter", "x", "claude", "ai"],
   "license": "MIT",

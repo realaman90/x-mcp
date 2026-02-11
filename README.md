@@ -44,7 +44,7 @@ Add to `~/.claude/settings.json`:
     "x": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "x-mcp"],
+      "args": ["-y", "@realaman90/x-mcp"],
       "env": {
         "X_BEARER_TOKEN": "your-bearer-token"
       }
@@ -82,7 +82,7 @@ from:elonmusk has:media                   # Elon's tweets with media
 
 ### Run directly (without Claude)
 ```bash
-X_BEARER_TOKEN="your-token" npx x-mcp
+X_BEARER_TOKEN="your-token" npx @realaman90/x-mcp
 ```
 
 ## Requirements
