@@ -100,7 +100,7 @@ Post a tweet: "Hello from Claude!"
 
 ## Team Setup (sharing your app with others)
 
-If you want a colleague to use your X app but post from **their own account**:
+If you want a team member to use your X app but post from **their own account**:
 
 ### App owner (one-time)
 
@@ -108,9 +108,9 @@ If you want a colleague to use your X app but post from **their own account**:
    - App permissions: **Read and write**
    - Type of App: **Web App, Automated App or Bot**
    - Callback URL: `http://localhost:3456/callback`
-2. Share your **API Key**, **API Secret**, and **Bearer Token** with your colleague
+2. Share your **API Key**, **API Secret**, and **Bearer Token** with them
 
-### Colleague (one-time)
+### Team member (one-time)
 
 ```bash
 npx @realaman90/x-mcp --setup
