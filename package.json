@@ -1,13 +1,13 @@
 {
   "name": "@realaman90/x-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for X/Twitter API — search tweets, read profiles, get timelines and replies",
+  "version": "2.0.1",
+  "description": "MCP server for X/Twitter API — read tweets, profiles, timelines + write posts, likes, retweets, follows, bookmarks, and more",
   "type": "module",
   "main": "index.js",
   "bin": {
     "x-mcp": "index.js"
   },
-  "keywords": ["mcp", "twitter", "x", "claude", "ai"],
+  "keywords": ["mcp", "twitter", "x", "claude", "ai", "oauth", "post", "tweet"],
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
