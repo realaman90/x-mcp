@@ -3,50 +3,80 @@
 [![npm version](https://img.shields.io/npm/v/@realaman90/x-mcp)](https://www.npmjs.com/package/@realaman90/x-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-MCP server for X/Twitter API — give Claude (or any MCP client) the ability to search, read, post, like, retweet, follow, bookmark, and more.
+MCP server for X/Twitter API — give Claude (or any MCP client) the ability to search, read, post, like, retweet, follow, bookmark, manage lists, explore communities, and more.
 
-**27 tools total**: 8 read-only (Bearer token) + 19 write/advanced-read (OAuth 1.0a).
+**44 tools total**: 17 read-only (Bearer token) + 27 write/advanced-read (OAuth 1.0a).
 
 ## Why
 
 - Search and analyze tweets without leaving your AI workflow
 - Post, reply, quote-tweet, and run polls directly from Claude
 - Like, retweet, follow, bookmark, block, mute — all from your terminal
+- Manage X Lists — create, update, add/remove members, pin/unpin
+- Explore Communities, trending topics, and news
+- Upload images and attach them to tweets
+- Monitor your API usage
 - Works with Claude Code, Claude Desktop, Codex, or any MCP client
 - OAuth credentials optional — runs read-only with just a Bearer token
 
 ## Tools
 
-### Always available (Bearer token only) — 8 tools
+### Always available (Bearer token only) — 17 tools
 
 | Tool | Description |
 |------|-------------|
+| **Tweets** | |
 | `search_tweets` | Search recent tweets (last 7 days) with full query operators |
 | `get_user_profile` | Get user profile by username (bio, followers, etc.) |
 | `get_user_tweets` | Get a user's recent tweets by user ID |
 | `get_tweet_replies` | Get replies to a specific tweet |
 | `get_tweet` | Get a single tweet with full details and metrics |
+| **Users** | |
 | `get_user_followers` | Get a user's followers |
 | `get_user_following` | Get who a user is following |
 | `get_liking_users` | Get users who liked a tweet |
+| **Trends** | |
+| `get_trending_topics` | Get trending topics by location (WOEID) |
+| **Communities** | |
+| `get_community` | Get details for a specific community |
+| `search_communities` | Search communities by keyword |
+| **News** | |
+| `get_news` | Get a news article/cluster by ID |
+| **Usage** | |
+| `get_api_usage` | Get your API tweet consumption stats |
+| **Lists** | |
+| `get_list` | Get list details by ID |
+| `get_user_lists` | Get lists owned by a user |
+| `get_list_members` | Get members of a list |
+| `get_user_list_memberships` | Get lists a user belongs to |
 
-### Requires OAuth 1.0a — 19 tools (auto-registered when credentials present)
+### Requires OAuth 1.0a — 27 tools (auto-registered when credentials present)
 
 | Tool | Description |
 |------|-------------|
+| **Read** | |
 | `get_my_profile` | Get your own profile |
 | `get_user_mentions` | Get tweets mentioning a user |
 | `get_quote_tweets` | Get quote tweets of a tweet |
 | `get_bookmarks` | Get your bookmarked tweets |
-| `get_trending_topics` | Get trending topics by location |
-| `create_post` | Post a tweet (text, reply, quote, poll) |
+| **Post** | |
+| `upload_media` | Upload an image (from URL) for use in tweets |
+| `create_post` | Post a tweet (text, reply, quote, poll, media) |
 | `delete_post` | Delete your own tweet |
+| **Engage** | |
 | `like_post` / `unlike_post` | Like or unlike a tweet |
 | `repost` / `unrepost` | Retweet or undo retweet |
 | `follow_user` / `unfollow_user` | Follow or unfollow a user |
 | `bookmark_post` / `unbookmark_post` | Bookmark or remove bookmark |
 | `block_user` / `unblock_user` | Block or unblock a user |
 | `mute_user` / `unmute_user` | Mute or unmute a user |
+| **Lists** | |
+| `create_list` | Create a new list |
+| `update_list` | Update list name/description/privacy |
+| `delete_list` | Delete a list you own |
+| `add_list_member` | Add a user to your list |
+| `remove_list_member` | Remove a user from your list |
+| `pin_list` / `unpin_list` | Pin or unpin a list |
 
 ## Quick Start
 
@@ -59,7 +89,7 @@ MCP server for X/Twitter API — give Claude (or any MCP client) the ability to 
    - Copy the **API Key** and **API Secret** (for write access)
    - Generate and copy the **Access Token** and **Access Token Secret** (for write access)
 
-> **Read-only mode**: Only the Bearer Token is required. The 8 read tools work without OAuth.
+> **Read-only mode**: Only the Bearer Token is required. The 17 read tools work without OAuth.
 
 ### 2. Add to Claude Code
 
@@ -145,6 +175,13 @@ Like tweet 1234567890
 Retweet the latest tweet from @username
 ```
 
+### Lists
+```
+Create a private list called "AI Builders"
+Add @username to my "AI Builders" list
+Show me the members of list 123456
+```
+
 ### Chain tools
 1. `get_user_profile` → get user ID from username
 2. `get_user_tweets` → get their recent tweets
@@ -168,10 +205,10 @@ Retweet the latest tweet from @username
 
 ## How It Works
 
-Single-file MCP server (~430 lines). No build step, no config files, zero extra dependencies. Uses Node.js built-in `crypto` for OAuth signing.
+Single-file MCP server (~720 lines). No build step, no config files, zero extra dependencies. Uses Node.js built-in `crypto` for OAuth signing.
 
 ```
-Claude ↔ stdio ↔ x-mcp ↔ X API v1.1/v2
+Claude ↔ stdio ↔ x-mcp ↔ X API v2
                     ↑
           Bearer (read) + OAuth 1.0a (write)
 ```
