@@ -17,7 +17,7 @@ import { z } from "zod";
 
 // ─── Auth config ───────────────────────────────────────────────────────────────
 
-const BEARER_TOKEN = decodeURIComponent(process.env.X_BEARER_TOKEN || "");
+const BEARER_TOKEN = process.env.X_BEARER_TOKEN || "";
 if (!BEARER_TOKEN) {
   console.error("X_BEARER_TOKEN environment variable is required");
   process.exit(1);
