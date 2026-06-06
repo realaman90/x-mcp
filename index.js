@@ -316,7 +316,7 @@ server.tool(
   },
   async ({ query, max_results }) => {
     if (XQUIK_API_KEY) {
-      const data = await xquik("/api/v1/x/tweets/search", { query, limit: max_results });
+      const data = await xquik("/api/v1/x/tweets/search", { q: query, limit: max_results });
       return ok(xquikTweetsToX(data));
     }
 
@@ -373,7 +373,7 @@ server.tool(
   },
   async ({ tweet_id, max_results }) => {
     if (XQUIK_API_KEY) {
-      const data = await xquik("/api/v1/x/tweets/search", { query: `conversation_id:${tweet_id}`, limit: max_results });
+      const data = await xquik("/api/v1/x/tweets/search", { q: `conversation_id:${tweet_id}`, limit: max_results });
       return ok(xquikTweetsToX(data));
     }
 
