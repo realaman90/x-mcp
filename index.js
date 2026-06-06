@@ -18,8 +18,11 @@ import { z } from "zod";
 // ─── Auth config ───────────────────────────────────────────────────────────────
 
 const BEARER_TOKEN = process.env.X_BEARER_TOKEN || "";
-if (!BEARER_TOKEN) {
-  console.error("X_BEARER_TOKEN environment variable is required");
+const XQUIK_API_KEY = process.env.XQUIK_API_KEY || process.env.HERMES_TWEET_API_KEY || "";
+const XQUIK_BASE_URL = (process.env.XQUIK_BASE_URL || "https://xquik.com").replace(/\/$/, "");
+
+if (!BEARER_TOKEN && !XQUIK_API_KEY) {
+  console.error("X_BEARER_TOKEN, XQUIK_API_KEY, or HERMES_TWEET_API_KEY environment variable is required");
   process.exit(1);
 }
 
@@ -41,6 +44,10 @@ const COMMUNITY_FIELDS = "name,description,member_count,created_at,is_private";
 // ─── Bearer fetch (read-only, no user context) ────────────────────────────────
 
 async function xapi(endpoint, params = {}) {
+  if (!BEARER_TOKEN) {
+    throw new Error("X_BEARER_TOKEN is required for this tool");
+  }
+
   const url = new URL(`https://api.x.com/2${endpoint}`);
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined) url.searchParams.set(k, String(v));
@@ -53,6 +60,138 @@ async function xapi(endpoint, params = {}) {
     throw new Error(`X API ${res.status}: ${body}`);
   }
   return res.json();
+}
+
+async function xquik(endpoint, params = {}) {
+  if (!XQUIK_API_KEY) {
+    throw new Error("XQUIK_API_KEY or HERMES_TWEET_API_KEY is required for this tool");
+  }
+
+  const url = new URL(endpoint, XQUIK_BASE_URL);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
+  }
+
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${XQUIK_API_KEY}`,
+      "X-API-Key": XQUIK_API_KEY,
+    },
+  });
+  const text = await res.text();
+  const data = parseJson(text);
+
+  if (!res.ok) {
+    const message = firstValue(data, ["message", "error", "detail"]) || text;
+    throw new Error(`Xquik API ${res.status}: ${message}`);
+  }
+
+  return data;
+}
+
+function parseJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
+
+function firstValue(value, keys) {
+  if (!value || typeof value !== "object") return undefined;
+
+  for (const key of keys) {
+    const candidate = value[key];
+    if (candidate !== undefined && candidate !== null && candidate !== "") return String(candidate);
+  }
+
+  for (const child of Object.values(value)) {
+    const nested = firstValue(child, keys);
+    if (nested) return nested;
+  }
+
+  return undefined;
+}
+
+function numericValue(value, keys) {
+  const raw = firstValue(value, keys);
+  if (!raw) return 0;
+
+  const parsed = Number(raw.replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function findList(value, keys = ["data", "tweets", "results", "items"]) {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+
+  for (const key of keys) {
+    const candidate = value[key];
+    if (Array.isArray(candidate)) return candidate;
+
+    const nested = findList(candidate, keys);
+    if (nested.length) return nested;
+  }
+
+  return [];
+}
+
+function xquikTweetToX(tweet) {
+  const id = firstValue(tweet, ["id", "id_str", "tweet_id", "tweetId", "rest_id"]) || "";
+  const authorId = firstValue(tweet, ["author_id", "authorId", "user_id", "userId", "username", "handle"]);
+  const username = (firstValue(tweet, ["username", "handle", "screen_name", "screenName"]) || "").replace(/^@/, "");
+
+  return {
+    data: {
+      id,
+      text: firstValue(tweet, ["text", "full_text", "fullText", "content"]) || "",
+      created_at: firstValue(tweet, ["created_at", "createdAt", "creation_date", "creationDate", "date"]),
+      author_id: authorId,
+      conversation_id: firstValue(tweet, ["conversation_id", "conversationId"]),
+      lang: firstValue(tweet, ["lang", "language"]),
+      public_metrics: {
+        like_count: numericValue(tweet, ["like_count", "likeCount", "favorite_count", "favoriteCount", "likes"]),
+        retweet_count: numericValue(tweet, ["retweet_count", "retweetCount", "retweets"]),
+        reply_count: numericValue(tweet, ["reply_count", "replyCount", "replies"]),
+        quote_count: numericValue(tweet, ["quote_count", "quoteCount", "quotes"]),
+        impression_count: numericValue(tweet, ["impression_count", "impressionCount", "views", "view_count", "viewCount"]),
+      },
+    },
+    includes: username ? { users: [{ id: authorId || username, username, name: firstValue(tweet, ["name", "display_name", "displayName"]) || username }] } : undefined,
+  };
+}
+
+function xquikTweetsToX(data) {
+  const tweets = findList(data).map(tweet => xquikTweetToX(tweet));
+  const users = tweets.flatMap(tweet => tweet.includes?.users || []);
+
+  return {
+    data: tweets.map(tweet => tweet.data),
+    includes: users.length ? { users } : undefined,
+  };
+}
+
+function xquikUserToX(user) {
+  const username = (firstValue(user, ["username", "handle", "screen_name", "screenName"]) || "").replace(/^@/, "");
+
+  return {
+    data: {
+      id: firstValue(user, ["id", "user_id", "userId", "rest_id", "username", "handle"]) || username,
+      username,
+      name: firstValue(user, ["name", "display_name", "displayName"]) || username,
+      description: firstValue(user, ["description", "bio"]),
+      created_at: firstValue(user, ["created_at", "createdAt", "joined", "joinDate"]),
+      profile_image_url: firstValue(user, ["profile_image_url", "profileImageUrl", "avatar", "avatar_url"]),
+      verified: Boolean(user?.verified || user?.is_verified || user?.isVerified),
+      public_metrics: {
+        followers_count: numericValue(user, ["followers_count", "followersCount", "follower_count", "followerCount", "followers"]),
+        following_count: numericValue(user, ["following_count", "followingCount", "friends_count", "friendsCount", "following"]),
+        tweet_count: numericValue(user, ["tweet_count", "tweetCount", "statuses_count", "statusesCount", "tweets"]),
+        listed_count: numericValue(user, ["listed_count", "listedCount"]),
+      },
+    },
+  };
 }
 
 // ─── OAuth 1.0a signing (HMAC-SHA1) ───────────────────────────────────────────
@@ -176,6 +315,11 @@ server.tool(
     max_results: z.number().min(10).max(100).default(10).describe("Number of results (10-100)"),
   },
   async ({ query, max_results }) => {
+    if (XQUIK_API_KEY) {
+      const data = await xquik("/api/v1/x/tweets/search", { q: query, limit: max_results });
+      return ok(xquikTweetsToX(data));
+    }
+
     const data = await xapi("/tweets/search/recent", {
       query, max_results,
       "tweet.fields": TWEET_FIELDS,
@@ -192,6 +336,11 @@ server.tool(
   "Get an X/Twitter user's profile by username. Returns bio, follower counts, and account details.",
   { username: z.string().describe("X username (without @)") },
   async ({ username }) => {
+    if (XQUIK_API_KEY) {
+      const data = await xquik(`/api/v1/x/users/${username}`);
+      return ok(xquikUserToX(data));
+    }
+
     const data = await xapi(`/users/by/username/${username}`, { "user.fields": USER_FIELDS });
     return ok(data);
   }
@@ -223,6 +372,11 @@ server.tool(
     max_results: z.number().min(10).max(100).default(10).describe("Number of results (10-100)"),
   },
   async ({ tweet_id, max_results }) => {
+    if (XQUIK_API_KEY) {
+      const data = await xquik("/api/v1/x/tweets/search", { q: `conversation_id:${tweet_id}`, limit: max_results });
+      return ok(xquikTweetsToX(data));
+    }
+
     const data = await xapi("/tweets/search/recent", {
       query: `conversation_id:${tweet_id}`,
       max_results,
@@ -240,6 +394,11 @@ server.tool(
   "Get a single tweet by ID with full details including metrics, author info, and conversation context.",
   { tweet_id: z.string().describe("Tweet ID") },
   async ({ tweet_id }) => {
+    if (XQUIK_API_KEY) {
+      const data = await xquik(`/api/v1/x/tweets/${tweet_id}`);
+      return ok(xquikTweetToX(data));
+    }
+
     const data = await xapi(`/tweets/${tweet_id}`, {
       "tweet.fields": TWEET_FIELDS,
       expansions: "author_id",
@@ -719,7 +878,7 @@ if (HAS_OAUTH) {
 
 const toolCount = HAS_OAUTH ? 44 : 17;
 if (!HAS_OAUTH) {
-  console.error("OAuth credentials not found — running with 17 read-only tools (Bearer token only)");
+  console.error("OAuth credentials not found — running with 17 read-only tools");
   console.error("Set X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET for full 44-tool access");
 }
 
