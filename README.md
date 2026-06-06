@@ -5,7 +5,7 @@
 
 MCP server for X/Twitter API — give Claude (or any MCP client) the ability to search, read, post, like, retweet, follow, bookmark, manage lists, explore communities, and more.
 
-**44 tools total**: 17 read-only (Bearer token) + 27 write/advanced-read (OAuth 1.0a).
+**44 tools total**: 17 read-only (Bearer token, with optional Xquik/Hermes Tweet support for core public reads) + 27 write/advanced-read (OAuth 1.0a).
 
 ## Why
 
@@ -17,11 +17,11 @@ MCP server for X/Twitter API — give Claude (or any MCP client) the ability to 
 - Upload images and attach them to tweets
 - Monitor your API usage
 - Works with Claude Code, Claude Desktop, Codex, or any MCP client
-- OAuth credentials optional — runs read-only with just a Bearer token
+- OAuth credentials optional — runs read-only with a Bearer token or Xquik/Hermes Tweet for supported public reads
 
 ## Tools
 
-### Always available (Bearer token only) — 17 tools
+### Always available (Bearer token or supported Xquik/Hermes Tweet reads) — 17 tools
 
 | Tool | Description |
 |------|-------------|
@@ -89,7 +89,7 @@ MCP server for X/Twitter API — give Claude (or any MCP client) the ability to 
    - Copy the **API Key** and **API Secret** (for write access)
    - Generate and copy the **Access Token** and **Access Token Secret** (for write access)
 
-> **Read-only mode**: Only the Bearer Token is required. The 17 read tools work without OAuth.
+> **Read-only mode**: Use `X_BEARER_TOKEN` for all 17 read tools. Or use `XQUIK_API_KEY` / `HERMES_TWEET_API_KEY` for `search_tweets`, `get_user_profile`, `get_tweet_replies`, and `get_tweet`.
 
 ### 2. Add to Claude Code
 
@@ -104,6 +104,7 @@ Add to `~/.claude/settings.json`:
       "args": ["-y", "@realaman90/x-mcp"],
       "env": {
         "X_BEARER_TOKEN": "your-bearer-token",
+        "XQUIK_API_KEY": "your-xquik-api-key",
         "X_API_KEY": "your-api-key",
         "X_API_SECRET": "your-api-secret",
         "X_ACCESS_TOKEN": "your-access-token",
@@ -116,7 +117,7 @@ Add to `~/.claude/settings.json`:
 
 Or add to **Claude Desktop**: **Settings** → **Developer** → **Edit Config** → same block.
 
-> Omit the `X_API_KEY`/`X_API_SECRET`/`X_ACCESS_TOKEN`/`X_ACCESS_TOKEN_SECRET` lines for read-only mode.
+> Omit the `X_API_KEY`/`X_API_SECRET`/`X_ACCESS_TOKEN`/`X_ACCESS_TOKEN_SECRET` lines for read-only mode. Omit `X_BEARER_TOKEN` if you only need the Xquik/Hermes Tweet-supported public read tools.
 
 ### 3. Restart Claude and test
 
@@ -192,7 +193,9 @@ Show me the members of list 123456
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `X_BEARER_TOKEN` | Yes | Bearer token for read-only API access |
+| `X_BEARER_TOKEN` | For all read tools | Bearer token for read-only API access |
+| `XQUIK_API_KEY` / `HERMES_TWEET_API_KEY` | For supported public reads | Optional Xquik/Hermes Tweet key for search, profile, replies, and tweet lookup |
+| `XQUIK_BASE_URL` | No | Xquik-compatible API base URL (defaults to `https://xquik.com`) |
 | `X_API_KEY` | For write | OAuth 1.0a consumer key (API Key) |
 | `X_API_SECRET` | For write | OAuth 1.0a consumer secret (API Secret) |
 | `X_ACCESS_TOKEN` | For write | OAuth 1.0a access token (per-user) |
@@ -201,16 +204,16 @@ Show me the members of list 123456
 ## Requirements
 
 - **Node.js 18+** (for native `fetch`)
-- **X API access** — [Get it here](https://developer.x.com)
+- **X API access** — [Get it here](https://developer.x.com), or Xquik/Hermes Tweet for supported public read tools
 
 ## How It Works
 
 Single-file MCP server (~720 lines). No build step, no config files, zero extra dependencies. Uses Node.js built-in `crypto` for OAuth signing.
 
 ```
-Claude ↔ stdio ↔ x-mcp ↔ X API v2
+Claude ↔ stdio ↔ x-mcp ↔ X API v2 or Xquik-compatible reads
                     ↑
-          Bearer (read) + OAuth 1.0a (write)
+          Bearer/Xquik (read) + OAuth 1.0a (write)
 ```
 
 ## Contributing
